@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mini Rush</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --neon-cyan: #00f0ff;
+    --neon-pink: #ff2d78;
+    --neon-yellow: #f5e642;
+    --neon-green: #39ff6e;
+    --dark-bg: #07090f;
+    --card-bg: #0d1120;
+    --grid-line: rgba(0,240,255,0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark-bg);
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.15) 0px,
+      rgba(0,0,0,0.15) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #wrapper {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+    position: relative;
+  }
+
+  .title-block { margin-bottom: 8px; }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(2rem, 8vw, 3.4rem);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow:
+      0 0 8px var(--neon-cyan),
+      0 0 24px var(--neon-cyan),
+      0 0 60px rgba(0,240,255,0.4);
+    animation: flicker 6s infinite;
+  }
+
+  @keyframes flicker {
+    0%,95%,100% { opacity: 1; }
+    96% { opacity: 0.8; }
+    97% { opacity: 1; }
+    98% { opacity: 0.6; }
+    99% { opacity: 1; }
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--neon-pink);
+    text-shadow: 0 0 8px var(--neon-pink);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0 18px;
+    padding: 12px 18px;
+    background: var(--card-bg);
+    border: 1px solid rgba(0,240,255,0.25);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #hud::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-pink), transparent);
+  }
+
+  .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .hud-label {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+  }
+
+  .hud-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px var(--neon-cyan);
+    min-width: 80px;
+    text-align: center;
+  }
+
+  #scoreVal {
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+  }
+
+  #timerBar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  #timerFill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px var(--neon-cyan);
+  }
+
+  #info {
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    color: var(--neon-pink);
+    text-shadow: 0 0 8px var(--neon-pink);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    min-height: 20px;
+  }
+
+  #game {
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .box {
+    width: 72px;
+    height: 72px;
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 2px solid rgba(255,255,255,0.15);
+    transition: transform 0.1s, box-shadow 0.1s, opacity 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .box::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: rgba(255,255,255,0.12);
+    border-radius: 6px 6px 50% 50%;
+    pointer-events: none;
+  }
+
+  .box:hover {
+    transform: scale(1.1) translateY(-3px);
+    box-shadow: 0 0 20px currentColor, 0 8px 24px rgba(0,0,0,0.5);
+    border-color: rgba(255,255,255,0.5);
+    z-index: 2;
+  }
+
+  .box:active { transform: scale(0.97); }
+
+  .boxes-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  #line {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    margin-top: 8px;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .result-panel {
+    background: var(--card-bg);
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 8px;
+    padding: 32px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(255,45,120,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .result-icon {
+    font-size: 3.5rem;
+    display: block;
+    margin-bottom: 8px;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+
+  .result-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: var(--neon-pink);
+    text-shadow: 0 0 16px var(--neon-pink);
+    margin-bottom: 12px;
+  }
+
+  .result-score {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 24px;
+    letter-spacing: 0.15em;
+  }
+
+  .result-score span {
+    color: var(--neon-yellow);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    text-shadow: 0 0 10px var(--neon-yellow);
+  }
+
+  .btn-arcade {
+    display: inline-block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--dark-bg);
+    background: var(--neon-cyan);
+    border: none;
+    border-radius: 4px;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.1s;
+    box-shadow: 0 0 16px var(--neon-cyan), 0 0 40px rgba(0,240,255,0.3);
+  }
+
+  .btn-arcade:hover {
+    box-shadow: 0 0 24px var(--neon-cyan), 0 0 60px rgba(0,240,255,0.5);
+    transform: translateY(-2px);
+  }
+
+  .btn-arcade:active { transform: scale(0.97); }
+
+  .color-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .box-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .corner {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .corner.tl { top: 0; left: 0; border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
+  .corner.tr { top: 0; right: 0; border-top: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan); }
+  .corner.bl { bottom: 0; left: 0; border-bottom: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
+  .corner.br { bottom: 0; right: 0; border-bottom: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan); }
+</style>
+</head>
+<body>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div id="wrapper">
+  <div class="title-block">
+    <h1>Mini Rush</h1>
+    <p class="subtitle">Arcade Color Challenge</p>
+  </div>
+
+  <div id="hud">
+    <div class="hud-item">
+      <span class="hud-label">Temps</span>
+      <span class="hud-value" id="timeVal">5.0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="scoreVal">0</span>
+    </div>
+  </div>
+
+  <div id="timerBar"><div id="timerFill" style="width:100%"></div></div>
+
+  <p id="info"></p>
+  <div id="game"></div>
+</div>
+
+<script>
+const colorMap = {
+  red:    { hex: '#e63946', name: 'ROUGE' },
+  blue:   { hex: '#3a86ff', name: 'BLEU' },
+  green:  { hex: '#2dc653', name: 'VERT' },
+  yellow: { hex: '#f5e642', name: 'JAUNE' }
+};
+const colorKeys = ['red','blue','green','yellow'];
+
+let base=5, t=5, s=0, intv, tMax=5;
+let sel=null, links=0;
+
+const timeEl = document.getElementById('timeVal');
+const scoreEl = document.getElementById('scoreVal');
+const infoEl = document.getElementById('info');
+const gameEl = document.getElementById('game');
+const timerFill = document.getElementById('timerFill');
+
+function makeBox(color, onclick, label=false) {
+  const wrap = document.createElement('div');
+  wrap.className = 'box-wrap';
+  const b = document.createElement('div');
+  b.className = 'box';
+  b.style.background = colorMap[color].hex;
+  b.onclick = onclick;
+  wrap.appendChild(b);
+  if (label) {
+    const lbl = document.createElement('div');
+    lbl.className = 'color-label';
+    lbl.textContent = colorMap[color].name;
+    wrap.appendChild(lbl);
+  }
+  return wrap;
+}
+
+function start() {
+  base=5; s=0; scoreEl.textContent='0';
+  next();
+}
+
+function next() {
+  clearInterval(intv);
+  t=base; tMax=base;
+  gameEl.innerHTML='';
+  updateTimer();
+  intv = setInterval(()=>{
+    t = Math.max(0, t - 0.1);
+    updateTimer();
+    if(t<=0) end();
+  }, 100);
+  scoreEl.textContent = s;
+
+  const r = Math.random();
+  if(r < 0.33) intrus();
+  else if(r < 0.66) pick();
+  else link();
+}
+
+function updateTimer() {
+  const pct = (t / tMax) * 100;
+  timerFill.style.width = pct + '%';
+  timeEl.textContent = t.toFixed(1);
+  timerFill.style.background = pct > 50
+    ? 'linear-gradient(90deg, #00f0ff, #39ff6e)'
+    : pct > 25
+    ? 'linear-gradient(90deg, #f5e642, #ff8c00)'
+    : 'linear-gradient(90deg, #ff2d78, #ff5500)';
+}
+
+function intrus() {
+  infoEl.textContent = '▶ Trouve l\'intrus';
+  const c = colorKeys[Math.random()*4|0];
+  const d = colorKeys.filter(x=>x!==c)[0];
+  const a = [c,c,c,d].sort(()=>Math.random()-.5);
+  const row = document.createElement('div');
+  row.className = 'boxes-row';
+  a.forEach(x=>{
+    row.appendChild(makeBox(x, _=> x===d ? win() : end()));
+  });
+  gameEl.appendChild(row);
+}
+
+function pick() {
+  const w = colorKeys[Math.random()*4|0];
+  infoEl.textContent = '▶ Clique sur ' + colorMap[w].name;
+  const row = document.createElement('div');
+  row.className = 'boxes-row';
+  colorKeys.forEach(x=>{
+    row.appendChild(makeBox(x, _=> x===w ? win() : end(), true));
+  });
+  gameEl.appendChild(row);
+}
+
+function link() {
+  infoEl.textContent = '▶ Relie toutes les couleurs';
+  sel=null; links=0;
+  const L = document.createElement('div');
+  const R = document.createElement('div');
+  L.className = R.className = 'col';
+
+  const a=[...colorKeys].sort(()=>Math.random()-.5);
+  const b=[...colorKeys].sort(()=>Math.random()-.5);
+
+  a.forEach(x=>{
+    const w = makeBox(x, _=> { sel=x; });
+    L.appendChild(w);
+  });
+
+  b.forEach(x=>{
+    const w = makeBox(x, _=>{
+      if(!sel) return;
+      if(sel===x) {
+        w.querySelector('.box').style.opacity='0.25';
+        w.querySelector('.box').style.transform='scale(0.85)';
+        sel=null;
+        if(++links===colorKeys.length) win();
+      } else {
+        end();
+      }
+    });
+    R.appendChild(w);
+  });
+
+  const wrap = document.createElement('div');
+  wrap.id = 'line';
+  wrap.append(L,R);
+  gameEl.appendChild(wrap);
+}
+
+function win() {
+  s++;
+  base = Math.max(1, base - 0.1);
+  setTimeout(()=> next(), 80);
+}
+
+function end() {
+  clearInterval(intv);
+  timerFill.style.width='0%';
+  gameEl.innerHTML = `
+    <div class="result-panel">
+      <span class="result-icon">💀</span>
+      <div class="result-title">GAME OVER</div>
+      <div class="result-score">Score final : <span>${s}</span></div>
+      <button class="btn-arcade" onclick="start()">REJOUER</button>
+    </div>`;
+}
+
+start();
+</script>
+</body>
+</html>
